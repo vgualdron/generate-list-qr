@@ -1,13 +1,24 @@
+import environmentConfig from './config/env.config.js'
+
+let envConfig = environmentConfig[process.env.NODE_ENV];
+console.log(envConfig);
 export default {
+  mode: 'spa',
+  env: envConfig,
+  generate: {
+    dir: 'docs'
+  },
   // Disable server-side rendering: https://go.nuxtjs.dev/ssr-mode
   ssr: false,
 
   // Target: https://go.nuxtjs.dev/config-target
   target: 'static',
 
-  // Global page headers: https://go.nuxtjs.dev/config-head
   head: {
-    title: 'generate-list-qr',
+    htmlAttrs: {
+      lang: 'es'
+    },
+    title: envConfig.appName,
     meta: [
       { charset: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
@@ -46,11 +57,20 @@ export default {
   // PWA module configuration: https://go.nuxtjs.dev/pwa
   pwa: {
     manifest: {
-      lang: 'en'
+      lang: 'esp'
     }
   },
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {
+    extend (config, ctx) {
+      config.node = {
+        child_process: "empty",
+        fs: "empty"
+      }
+    }
+  },
+  router: {
+    base: envConfig.appBaseDir
   }
 }
