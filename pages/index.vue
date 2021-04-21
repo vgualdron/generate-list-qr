@@ -5,7 +5,7 @@
     </b-navbar>
     <b-card class="text-center">
       <b-tabs content-class="mt-3">
-        <b-tab title="Generar lista de códigos QR" active>
+        <b-tab title="Generar lista de QR" active>
           <b-card class="text-center">
             <b-row class="mb-3">
               <b-col lg="12" class="my-1">
@@ -88,7 +88,7 @@
             </b-row>
           </b-modal>
         </b-tab>
-        <b-tab title="Escanear códigos QR">
+        <b-tab title="Escanear QR">
           <b-card class="text-center">
             <b-row class="mb-10">
               <b-col lg="12" class="my-1">
