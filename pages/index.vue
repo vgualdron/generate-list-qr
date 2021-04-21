@@ -166,9 +166,9 @@ export default {
   computed: {
     icon () {
       if (this.torchActive) {
-        return '../assets/images/flash-off.svg'
+        return './generate-list-qr/images/flash-off.svg'
       } else {
-        return '../assets/images/flash-on.svg'
+        return './generate-list-qr/images/flash-on.svg'
       }
     },
     sortOptions () {
