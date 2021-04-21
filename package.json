@@ -15,9 +15,11 @@
     "bootstrap": "^4.6.0",
     "bootstrap-vue": "^2.21.2",
     "core-js": "^3.9.1",
+    "jspdf": "^2.3.1",
     "nuxt": "^2.15.3",
     "qrcode": "^1.4.4",
-    "vue-qrcode": "^0.3.5"
+    "vue-qrcode": "^0.3.5",
+    "vue-qrcode-reader": "^3.0.0"
   },
   "devDependencies": {
     "@nuxtjs/eslint-config": "^6.0.0",
