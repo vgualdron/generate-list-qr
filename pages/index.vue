@@ -7,10 +7,10 @@
       <b-tabs content-class="mt-3">
         <b-tab title="Generar lista de QR" active>
           <b-card class="text-center">
-            <b-row class="mb-3">
+            <!-- <b-row class="mb-3">
               <b-col lg="12" class="my-1">
                 <b-form-group
-                  label="Filtro"
+                  label=""
                   label-for="filter-input"
                   label-cols-sm="1"
                   label-align-sm="right"
@@ -31,7 +31,7 @@
                   </b-input-group>
                 </b-form-group>
               </b-col>
-            </b-row>
+            </b-row> -->
             <!--<b-button @click="actionAdd" class="text-right mb-3 mt-3">Agregar fila</b-button>-->
             <!--<b-button v-if="showBtnGenerateQr" @click="showModal" class="text-right mb-3 mt-3 mr-2">Generar códigos QR</b-button>-->
             <b-table
@@ -81,18 +81,29 @@
           >
             <b-row v-for="(item, index) in items" :key="index">
               <b-col v-if="item.reference && item.name" lg="12" class="my-1 text-center">
-                  <b-card :title="item.name" :sub-title="item.reference">
-                    <vue-qrcode :value="item.reference" />
-                  </b-card>
+                <b-card :title="item.name" :sub-title="item.reference">
+                  <vue-qrcode :value="item.reference" :width="300" />
+                </b-card>
               </b-col>
             </b-row>
           </b-modal>
         </b-tab>
-        <b-tab title="Escanear QR">
+        <b-tab title="Escanear QR" @click="reload">
           <b-card class="text-center">
             <b-row class="mb-10">
               <b-col lg="12" class="my-1">
-                <qrcode-stream :key="_uid" :track="paintCenterText" @init="logErrors" />
+                <p v-if="torchNotSupported" class="error">
+                  Flash no soportado por la camara activa
+                </p>
+                <b-button @click="reload" class="text-right mb-3 mt-3">Recargar</b-button>
+                <qrcode-stream :key="_uid" :track="paintCenterText" @init="onInit" v-if="!destroyed">
+                  <button @click="torchActive = !torchActive" :disabled="torchNotSupported">
+                    <img :src="icon" alt="toggle torch">
+                  </button>
+                  <div class="loading-indicator" v-if="loading">
+                    Cargando...
+                  </div>
+                </qrcode-stream>
               </b-col>
             </b-row>
           </b-card>
@@ -112,6 +123,10 @@ export default {
   },
   data () {
     return {
+      torchActive: false,
+      torchNotSupported: false,
+      loading: false,
+      destroyed: false,
       totalRows: 1,
       sortBy: '',
       sortDesc: false,
@@ -138,13 +153,24 @@ export default {
           label: 'Acciones'
         }
       ],
-      item: {},
-      items: []
+      items: [
+        {
+          reference: '',
+          name: ''
+        }
+      ]
     }
   },
   watch: {
   },
   computed: {
+    icon () {
+      if (this.torchActive) {
+        return '../assets/images/flash-off.svg'
+      } else {
+        return '../assets/images/flash-on.svg'
+      }
+    },
     sortOptions () {
       // Create an options list from our fields
       return this.fields.filter(f => f.sortable).map((f) => {
@@ -163,6 +189,22 @@ export default {
     this.totalRows = this.items.length
   },
   methods: {
+    async onInit (promise) {
+      this.loading = true
+      try {
+        const { capabilities } = await promise
+        this.torchNotSupported = !capabilities.torch
+      } catch (error) {
+        console.error(error)
+      } finally {
+        this.loading = false
+      }
+    },
+    async reload () {
+      this.destroyed = true
+      await this.$nextTick()
+      this.destroyed = false
+    },
     logErrors (promise) {
       promise.catch(console.error)
     },
