@@ -1,7 +1,7 @@
 <template>
   <div>
     <b-navbar toggleable="lg" type="dark" variant="info">
-      <b-navbar-brand href="#">Vgualdron QR</b-navbar-brand>
+      <b-navbar-brand href="#">Generador QR</b-navbar-brand>
     </b-navbar>
     <b-card class="text-center">
       <b-tabs content-class="mt-3">
@@ -50,19 +50,18 @@
               small
               @filtered="onFiltered"
               class="mt-10">
-              <template #cell(reference)="row">
-                <b-form-input
-                  v-model="row.item.reference"
-                  type="text"
-                ></b-form-input>
-              </template>
               <template #cell(name)="row">
                 <b-form-input
                   v-model="row.item.name"
                   type="text"
                 ></b-form-input>
               </template>
-
+              <template #cell(reference)="row">
+                <b-form-input
+                  v-model="row.item.reference"
+                  type="text"
+                ></b-form-input>
+              </template>
               <template #cell(actions)="row">
                 <b-button size="sm" @click="actionRemove(row.item, row.index, $event.target)">
                   Eliminar
@@ -70,7 +69,7 @@
               </template>
             </b-table>
             <b-button @click="actionAdd" class="text-left mt-3">Agregar fila</b-button>
-            <b-button v-if="showBtnGenerateQr" @click="showModal" class="text-right mt-3 mr-2">Generar códigos QR</b-button>
+            <b-button v-show="showBtnGenerateQr" @click="showModal" class="text-right mt-3 mr-2">Generar códigos QR</b-button>
           </b-card>
           <b-modal
             v-model="modalShow"
@@ -78,14 +77,21 @@
             @cancel="closeModal"
             @ok="generateQr"
             ref="modalQR"
+            id="modalQR"
           >
-            <b-row v-for="(item, index) in items" :key="index">
-              <b-col v-if="item.reference && item.name" lg="12" class="my-1 text-center">
-                <b-card :title="item.name" :sub-title="item.reference">
-                  <vue-qrcode :value="item.reference" :width="300" />
-                </b-card>
-              </b-col>
-            </b-row>
+            <div id="divModalQR">
+              <b-row v-for="(item, index) in items" :key="index">
+                <b-col v-if="item.reference && item.name" lg="12" class="my-1 text-center">
+                  <b-card :title="item.name">
+                    <a v-if="item.reference.includes('http')" :href="item.reference" target="_blank">{{ item.reference }}</a>
+                    <h5 v-else>{{ item.reference }}</h5>
+                    <vue-qrcode :value="item.reference" :width="300" :ref="'refQrCode' + index"/>
+                  </b-card>
+                </b-col>
+              </b-row>
+            </div>
+            <div id="pdf">
+            </div>
           </b-modal>
         </b-tab>
         <b-tab title="Escanear QR" @click="reload">
@@ -114,8 +120,9 @@
 </template>
 <script>
 import VueQrcode from 'vue-qrcode'
-// import jsPDF from 'jspdf'
+import jsPDF from 'jspdf'
 import { QrcodeStream } from 'vue-qrcode-reader'
+/* eslint-disable new-cap */
 export default {
   components: {
     VueQrcode,
@@ -139,13 +146,13 @@ export default {
       responsive: true,
       fields: [
         {
-          key: 'reference',
-          label: 'Referencia',
+          key: 'name',
+          label: 'Nombre',
           sortable: true
         },
         {
-          key: 'name',
-          label: 'Nombre',
+          key: 'reference',
+          label: 'Referencia',
           sortable: true
         },
         {
@@ -178,15 +185,17 @@ export default {
       })
     },
     showBtnGenerateQr () {
-      const rows = this.items.find((item) => {
-        return item.reference.trim() && item.name.trim()
+      const rows = this.items.filter((item) => {
+        return item.reference.trim().length > 0 && item.name.trim().length > 0
       })
-      return rows
+      if (typeof rows === 'undefined') {
+        return false
+      }
+      return (rows.length === this.items.length)
     }
   },
   mounted () {
     // Set the initial number of items
-    this.totalRows = this.items.length
   },
   methods: {
     async onInit (promise) {
@@ -271,24 +280,40 @@ export default {
       this.hideModal()
     },
     generateQr () {
-      /* const doc = new jsPDF('p', 'pt', 'A4')
-      const margins = {
-        top: 80,
-        bottom: 60,
-        left: 40,
-        width: 522
-      }
-      doc.fromHTML(this.$refs.modalQR.innerHTML, margins.left, margins.top, {
-        width: margins.width
+      const doc = new jsPDF('p', 'pt', 'A4')
+      const sizeRow = 280
+      doc.setFontSize(8)
+      let count = 0
+      this.items.forEach((item, index) => {
+        const position = sizeRow * count
+        const image = this.$refs['refQrCode' + index][0].$el.src
+        doc.setFontSize(14)
+        doc.text(35, position + 35, 'Nombre: ' + item.name)
+        if (item.reference.includes('http')) {
+          doc.textWithLink('Referencia: ' + item.reference.substring(0, 60) + '...', 35, position + 55, { url: item.reference })
+        } else {
+          doc.text(35, position + 55, 'Referencia: ' + item.reference)
+        }
+        doc.addImage(image, 'PNG', 15, position + 60, 180, 180)
+        count++
+        if (((count + 1) % 4 === 0) && ((index + 1) !== this.items.length)) {
+          doc.addPage()
+          count = 0
+        }
       })
-      doc.save('test.pdf') */
+      doc.save()
     }
   }
 }
 </script>
-<style scoped>
+<style>
   .float-right {
     float: right;
     margin-bottom: 10px;
+  }
+
+  .modal-body {
+    overflow-y: scroll;
+    max-height: 500px;
   }
 </style>
