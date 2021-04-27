@@ -216,6 +216,7 @@ export default {
     },
     async reload () {
       this.destroyed = true
+      this.referenceQr = ''
       await this.$nextTick()
       this.destroyed = false
     },
