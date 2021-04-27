@@ -98,16 +98,26 @@
           <b-card class="text-center">
             <b-row class="mb-10">
               <b-col lg="12" class="my-1">
-                <p v-if="torchNotSupported" class="error">
-                  Flash no soportado por la camara activa
-                </p>
+                <a v-if="referenceQr.includes('http')" :href="referenceQr" target="_blank" ref="textCopy">{{ referenceQr }}</a>
+                <h5 v-else ref="textCopy">{{ referenceQr }}</h5>
+                <b-button v-show="referenceQr" @click="copy" class="text-right mr-2">Copiar texto</b-button>
+                <br>
                 <b-button @click="reload" class="text-right mb-3 mt-3">Recargar</b-button>
-                <qrcode-stream :key="_uid" :track="paintCenterText" @init="onInit" v-if="!destroyed">
+                <qrcode-stream
+                  :key="_uid"
+                  :track="paintCenterText"
+                  :camera="camera"
+                  @decode="onDecode"
+                  @init="onInit"
+                  v-if="!destroyed">
                   <button @click="torchActive = !torchActive" :disabled="torchNotSupported">
                     <img :src="icon" alt="toggle torch">
                   </button>
                   <div class="loading-indicator" v-if="loading">
                     Cargando...
+                  </div>
+                  <div v-show="showScanConfirmation" class="scan-confirmation">
+                    <img :src="'./images/checkmark.svg'" alt="Checkmark" width="128px" />
                   </div>
                 </qrcode-stream>
               </b-col>
@@ -130,6 +140,10 @@ export default {
   },
   data () {
     return {
+      camera: 'auto',
+      result: null,
+      showScanConfirmation: false,
+      referenceQr: '',
       torchActive: false,
       torchNotSupported: false,
       loading: false,
@@ -207,12 +221,32 @@ export default {
         console.error(error)
       } finally {
         this.loading = false
+        this.showScanConfirmation = this.camera === 'off'
       }
     },
     async reload () {
       this.destroyed = true
       await this.$nextTick()
       this.destroyed = false
+    },
+    async onDecode (content) {
+      this.referenceQr = content
+      this.pause()
+      await this.timeout(600)
+      this.unpause()
+    },
+
+    unpause () {
+      this.camera = 'auto'
+    },
+
+    pause () {
+      this.camera = 'off'
+    },
+    timeout (ms) {
+      return new Promise((resolve) => {
+        window.setTimeout(resolve, ms)
+      })
     },
     logErrors (promise) {
       promise.catch(console.error)
@@ -302,6 +336,14 @@ export default {
         }
       })
       doc.save()
+    },
+    copy () {
+      navigator.clipboard.writeText(this.referenceQr)
+      this.$bvToast.toast('Texto copiado exitosamente', {
+        title: 'Texto copiado',
+        variant: 'success',
+        solid: true
+      })
     }
   }
 }
@@ -316,4 +358,16 @@ export default {
     overflow-y: scroll;
     max-height: 500px;
   }
+
+  .scan-confirmation {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+
+    background-color: rgba(255, 255, 255, .8);
+
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: center;
+    }
 </style>
