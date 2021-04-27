@@ -110,9 +110,6 @@
                   @decode="onDecode"
                   @init="onInit"
                   v-if="!destroyed">
-                  <button @click="torchActive = !torchActive" :disabled="torchNotSupported">
-                    <img :src="icon" alt="toggle torch">
-                  </button>
                   <div class="loading-indicator" v-if="loading">
                     Cargando...
                   </div>
@@ -185,13 +182,6 @@ export default {
   watch: {
   },
   computed: {
-    icon () {
-      if (this.torchActive) {
-        return './images/flash-off.svg'
-      } else {
-        return './images/flash-on.svg'
-      }
-    },
     sortOptions () {
       // Create an options list from our fields
       return this.fields.filter(f => f.sortable).map((f) => {
